@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Mess System | July 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #050816;
+            --glass: rgba(255, 255, 255, 0.05);
+            --neon-cyan: #06b6d4;
+            --neon-blue: #3b82f6;
+        }
+        body {
+            font-family: 'Hind Siliguri', sans-serif;
+            background-color: var(--bg-dark);
+            color: #e2e8f0;
+        }
+        .glass {
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .neon-text {
+            background: linear-gradient(to right, var(--neon-cyan), var(--neon-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .neon-border {
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
+        }
+        .sidebar-link.active {
+            background: linear-gradient(to right, rgba(6, 182, 212, 0.2), transparent);
+            border-left: 3px solid var(--neon-cyan);
+            color: #fff;
+        }
+        .sidebar-link:hover { background: rgba(255, 255, 255, 0.05); }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(6, 182, 212, 0.15); }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        
+        .section { display: none; animation: fadeIn 0.4s ease-in-out; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- Mobile Overlay -->
+    <div id="overlay" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-64 h-screen fixed top-0 left-0 glass border-r border-white/10 p-4 flex flex-col z-40 -translate-x-full lg:translate-x-0 transition-transform duration-300">
+        <div class="mb-8 text-center">
+            <h1 class="text-2xl font-bold neon-text flex items-center justify-center gap-2">
+                <i class="fas fa-utensils"></i> SmartMess
+            </h1>
+            <p class="text-xs text-slate-400 mt-1">July 2026</p>
+        </div>
+        <nav class="flex-1 space-y-2">
+            <a href="javascript:void(0)" onclick="showSection('dashboard', this)" class="sidebar-link active flex items-center gap-3 p-3 rounded-lg text-slate-300 transition">
+                <i class="fas fa-home w-5"></i> ড্যাশবোর্ড
+            </a>
+            <a href="javascript:void(0)" onclick="showSection('members', this)" class="sidebar-link flex items-center gap-3 p-3 rounded-lg text-slate-300 transition">
+                <i class="fas fa-users w-5"></i> সদস্য
+            </a>
+            <a href="javascript:void(0)" onclick="showSection('meals', this)" class="sidebar-link flex items-center gap-3 p-3 rounded-lg text-slate-300 transition">
+                <i class="fas fa-bowl-food w-5"></i> মিল ট্র্যাকার
+            </a>
+            <a href="javascript:void(0)" onclick="showSection('expenses', this)" class="sidebar-link flex items-center gap-3 p-3 rounded-lg text-slate-300 transition">
+                <i class="fas fa-money-bill-trend-up w-5"></i> খরচ ম্যানেজার
+            </a>
+            <a href="javascript:void(0)" onclick="showSection('analytics', this)" class="sidebar-link flex items-center gap-3 p-3 rounded-lg text-slate-300 transition">
+                <i class="fas fa-chart-pie w-5"></i> এনালিটিক্স
+            </a>
+            <a href="javascript:void(0)" onclick="showSection('settings', this)" class="sidebar-link flex items-center gap-3 p-3 rounded-lg text-slate-300 transition">
+                <i class="fas fa-cog w-5"></i> সেটিংস
+            </a>
+        </nav>
+        <div class="p-4 glass rounded-xl text-center text-xs text-slate-400">
+            <p><i class="fas fa-circle text-emerald-400 text-[8px] mr-1"></i> সিস্টেম সক্রিয়</p>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="lg:ml-64 min-h-screen flex flex-col">
+        
+        <!-- Top Navbar -->
+        <header class="sticky top-0 z-20 glass border-b border-white/10 p-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="lg:hidden text-cyan-400 text-xl">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div>
+                    <h2 id="page-title" class="text-xl font-bold text-white">ড্যাশবোর্ড</h2>
+                    <p class="text-slate-400 text-xs">জুলাই ২০২৬ | মেস পরিচালনা প্যানেল</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="relative hidden md:block">
+                    <input type="text" placeholder="সার্চ..." class="glass rounded-full pl-10 pr-4 py-2 text-sm w-48 outline-none focus:border-cyan-400">
+                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                </div>
+                <button class="glass p-2 rounded-full text-cyan-400 relative">
+                    <i class="fas fa-bell"></i>
+                    <span class="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
+                </button>
+                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center font-bold text-white text-sm">A</div>
+            </div>
+        </header>
+
+        <div class="p-4 md:p-8 flex-1">
+            
+            <!-- Dashboard Section -->
+            <div id="dashboard" class="section active">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
+                    <div class="glass card-hover rounded-2xl p-4 md:p-5">
+                        <div class="flex justify-between items-center mb-2">
+                            <p class="text-slate-400 text-sm">মোট খরচ</p>
+                            <i class="fas fa-wallet text-blue-400 bg-blue-500/10 p-2 rounded-lg"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white">৳ ১৫,৭৫০</h3>
+                    </div>
+                    <div class="glass card-hover rounded-2xl p-4 md:p-5">
+                        <div class="flex justify-between items-center mb-2">
+                            <p class="text-slate-400 text-sm">মোট জমা</p>
+                            <i class="fas fa-piggy-bank text-emerald-400 bg-emerald-500/10 p-2 rounded-lg"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white">৳ ১৫,৭৫০</h3>
+                    </div>
+                    <div class="glass card-hover rounded-2xl p-4 md:p-5">
+                        <div class="flex justify-between items-center mb-2">
+                            <p class="text-slate-400 text-sm">মোট মিল</p>
+                            <i class="fas fa-bowl-food text-cyan-400 bg-cyan-500/10 p-2 rounded-lg"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white">৩৯৩ টি</h3>
+                    </div>
+                    <div class="glass card-hover rounded-2xl p-4 md:p-5">
+                        <div class="flex justify-between items-center mb-2">
+                            <p class="text-slate-400 text-sm">মিল রেট</p>
+                            <i class="fas fa-calculator text-purple-400 bg-purple-500/10 p-2 rounded-lg"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white">৳ ৪০.০৮</h3>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    <div class="glass rounded-2xl p-6 lg:col-span-2">
+                        <h3 class="text-lg font-semibold mb-4 text-white flex items-center gap-2"><i class="fas fa-chart-line text-cyan-400"></i> সদস্য ভিত্তিক মিল ও খরচ</h3>
+                        <div style="height: 300px;"><canvas id="mealCostChart"></canvas></div>
+                    </div>
+                    <div class="glass rounded-2xl p-6">
+                        <h3 class="text-lg font-semibold mb-4 text-white flex items-center gap-2"><i class="fas fa-handshake text-cyan-400"></i> চূড়ান্ত লেনদেন</h3>
+                        <div class="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                            <div class="bg-red-500/10 p-3 rounded-lg border border-red-500/20">
+                                <p class="text-xs text-red-400 font-bold mb-2">⬇️ যারা টাকা দেবে (৯৮৯৳)</p>
+                                <div class="text-sm text-slate-300 flex justify-between"><span>সাইফ</span><span>৪৫৪.২০৳</span></div>
+                                <div class="text-sm text-slate-300 flex justify-between"><span>সামিউল</span><span>২০৩.২৪৳</span></div>
+                                <div class="text-sm text-slate-300 flex justify-between"><span>আকাশ</span><span>১৪৪.০৮৳</span></div>
+                                <div class="text-sm text-slate-300 flex justify-between"><span>মেহেদী</span><span>১৪৪.০৮৳</span></div>
+                                <div class="text-sm text-slate-300 flex justify-between"><span>প্রান্ত</span><span>৪৩.৮৯৳</span></div>
+                                <div class="text-sm text-slate-300 flex justify-between"><span>তামীম</span><span>৩.৮২৳</span></div>
+                            </div>
+                            <div class="bg-emerald-500/10 p-3 rounded-lg border border-emerald-500/20">
+                                <p class="text-xs text-emerald-400 font-bold mb-2">⬆️ যারা টাকা পাবে (৯৯৪৳)</p>
+                                <div class="text-sm text-slate-300 flex justify-between"><span>লালন</span><span>৭১৬.৬০৳</span></div>
+                                <div class="text-sm text-slate-300 flex justify-between"><span>সাম্য</span><span>২৭৬.৭২৳</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Members Section -->
+            <div id="members" class="section">
+                <div id="memberCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"></div>
+                <div class="glass rounded-2xl p-4 md:p-6 overflow-x-auto">
+                    <h3 class="text-lg font-semibold mb-4 text-white">বিস্তারিত হিসাব টেবিল</h3>
+                    <table class="w-full text-center text-sm min-w-[600px]">
+                        <thead class="text-slate-400 border-b border-slate-700">
+                            <tr>
+                                <th class="p-3 text-left">নাম</th>
+                                <th class="p-3">মিল</th>
+                                <th class="p-3">খরচ</th>
+                                <th class="p-3">জমা</th>
+                                <th class="p-3">ব্যালেন্স</th>
+                            </tr>
+                        </thead>
+                        <tbody id="memberTableBody" class="text-slate-200"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Meal Tracker Section -->
+            <div id="meals" class="section">
+                <div class="glass rounded-2xl p-4 md:p-6">
+                    <h3 class="text-lg font-semibold mb-4 text-white">দৈনিক মিল হিস্ট্রি (৩১ দিন)</h3>
+                    <div class="overflow-x-auto pb-4">
+                        <table class="w-full text-center text-xs min-w-[800px]">
+                            <thead id="mealTableHead" class="text-slate-400 border-b border-slate-700"></thead>
+                            <tbody id="dailyMealTableBody" class="text-slate-300"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expense Manager Section -->
+            <div id="expenses" class="section">
+                <div class="glass rounded-2xl p-4 md:p-6">
+                    <h3 class="text-lg font-semibold mb-4 text-white">বাজারের খরচের খাতসমূহ</h3>
+                    <div id="expensesList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                    <div class="mt-6 pt-4 border-t border-slate-700 flex justify-between items-center font-bold text-lg">
+                        <span class="text-slate-300">সর্বমোট খরচ:</span>
+                        <span class="text-red-400">৳ ১৫,৭৫০</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Section -->
+            <div id="analytics" class="section">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="glass rounded-2xl p-6">
+                        <h3 class="text-lg font-semibold mb-4 text-white">খরচের ক্যাটাগরি</h3>
+                        <div style="height: 350px;"><canvas id="expensePieChart"></canvas></div>
+                    </div>
+                    <div class="glass rounded-2xl p-6">
+                        <h3 class="text-lg font-semibold mb-4 text-white">ব্যালেন্স ডিস্ট্রিবিউশন</h3>
+                        <div style="height: 350px;"><canvas id="balanceDoughnutChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Section -->
+            <div id="settings" class="section">
+                <div class="glass rounded-2xl p-6 space-y-6 max-w-2xl mx-auto">
+                    <div class="flex justify-between items-center border-b border-slate-700 pb-4">
+                        <div>
+                            <h4 class="font-semibold text-white">ডার্ক মোড</h4>
+                            <p class="text-sm text-slate-400">সিস্টেমের থিম পরিবর্তন করুন</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-700 peer-checked:bg-cyan-500 rounded-full peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                        </label>
+                    </div>
+                    <div class="flex justify-between items-center border-b border-slate-700 pb-4">
+                        <div>
+                            <h4 class="font-semibold text-white">অটো মিল রেট</h4>
+                            <p class="text-sm text-slate-400">মিল ও খরচ অনুযায়ী রেট অটো ক্যালকুলেট</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-700 peer-checked:bg-cyan-500 rounded-full peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                        </label>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h4 class="font-semibold text-white">নোটিফিকেশন</h4>
+                            <p class="text-sm text-slate-400">বাজার ও মিল রিমাইন্ডার</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-700 peer-checked:bg-cyan-500 rounded-full peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Floating Action Button -->
+    <button class="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-full shadow-lg shadow-cyan-500/50 flex items-center justify-center text-white text-xl hover:scale-110 transition z-30">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <script>
+        // Data Setup
+        const membersData = [
+            { name: "প্রান্ত", meals: 51.0, cost: 2043.89, deposit: 2000, balance: -43.89, daily: [2.5, 2.5, 2, 2.5, 2.5, 0, 0, 0, 0, 0, 1, 2.5, 2.5, 2, 2.5, 1.5, 1.5, 2.5, 2, 2.5, 1.5, 1, 2, 2, 1.5, 2, 1.5, 1, 1.5, 2, 2.5] },
+            { name: "আকাশ", meals: 53.5, cost: 2144.08, deposit: 2000, balance: -144.08, daily: [2, 2.5, 2, 2.5, 2, 0, 0, 0, 0, 0, 1, 2.5, 2.5, 2, 2, 1.5, 1.5, 2.5, 2.5, 2.5, 1.5, 1, 2, 2, 2.5, 2.5, 2.5, 1, 2, 2.5, 2.5] },
+            { name: "সামিউল", meals: 42.5, cost: 1703.24, deposit: 1500, balance: -203.24, daily: [2.5, 2.5, 2, 2.5, 1.5, 0, 0, 0, 1, 2, 1, 2, 2, 2, 2, 1, 1, 2, 2, 2, 1, 0, 0, 0, 0, 1, 2, 1, 2, 2, 2.5] },
+            { name: "তামীম", meals: 50.0, cost: 2003.82, deposit: 2000, balance: -3.82, daily: [2.5, 2.5, 2, 2.5, 1.5, 0, 0, 0, 0, 0, 1, 2.5, 2.5, 2, 2.5, 1.5, 0.5, 2.5, 2.5, 2.5, 1.5, 0.5, 2, 2.5, 1.5, 2.5, 1.5, 1, 1.5, 2, 2.5] },
+            { name: "মেহেদী", meals: 53.5, cost: 2144.08, deposit: 2000, balance: -144.08, daily: [2.5, 2.5, 2, 2.5, 1.5, 0, 0, 0, 0, 0, 1, 2, 2.5, 2, 2.5, 1.5, 1.5, 2.5, 2.5, 2.5, 1.5, 1, 2, 2.5, 2.5, 2.5, 2.5, 1, 1.5, 2.5, 2.5] },
+            { name: "সাইফ", meals: 55.0, cost: 2204.20, deposit: 1750, balance: -454.20, daily: [2, 2, 2, 2, 2, 0, 0, 0, 1, 2, 1, 2, 2, 2, 2, 1, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 1, 4, 3.5, 3.5] },
+            { name: "লালন", meals: 44.5, cost: 1783.40, deposit: 2500, balance: 716.60, daily: [2.5, 2, 2, 2.5, 2.5, 0, 0, 0, 0, 0, 0, 1, 2.5, 2, 2.5, 1.5, 1.5, 2, 2.5, 2.5, 1.5, 1, 2, 2.5, 1.5, 2.5, 2.5, 1, 0.5, 0, 0] },
+            { name: "সাম্য", meals: 43.0, cost: 1723.28, deposit: 2000, balance: 276.72, daily: [2, 2, 0, 0, 0, 0, 0, 0, 1, 2, 1, 2, 2, 2, 1, 1.5, 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 1, 2, 2, 2.5] }
+        ];
+
+        const expensesData = [
+            { desc: "চাল কেনা", who: "তামীম", amount: 120 },
+            { desc: "বড় বাজার", who: "আকাশ + প্রান্ত", amount: 4790 },
+            { desc: "মরিচ কেনা", who: "তামীম", amount: 60 },
+            { desc: "বাজার", who: "সাম্য", amount: 100 },
+            { desc: "বাজার", who: "সামিউল", amount: 70 },
+            { desc: "ভাড়া / গ্যাস (ফেরত)", who: "আকাশ", amount: 50 },
+            { desc: "বড় বাজার", who: "মেহেদী + লালন", amount: 4820 },
+            { desc: "বড় বাজার", who: "তামীম + সাম্য", amount: 5280 },
+            { desc: "ডিম-ডাল", who: "মেস", amount: 190 },
+            { desc: "আলু ও মরিচ", who: "মেস", amount: 140 },
+            { desc: "ডিম", who: "লালন", amount: 80 },
+            { desc: "পেঁয়াজ", who: "মেস", amount: 50 }
+        ];
+
+        const bnNum = (num) => num.toLocaleString('bn-BD', { maximumFractionDigits: 2 });
+        Chart.defaults.font.family = "'Hind Siliguri', sans-serif";
+        Chart.defaults.color = '#e2e8f0';
+
+        // Navigation & Sidebar Logic
+        function showSection(id, el) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+            el.classList.add('active');
+            const titles = { 'dashboard': 'ড্যাশবোর্ড', 'members': 'সদস্য তালিকা', 'meals': 'মিল ট্র্যাকার', 'expenses': 'খরচ ম্যানেজার', 'analytics': 'এনালিটিক্স', 'settings': 'সেটিংস' };
+            document.getElementById('page-title').innerText = titles[id];
+            // Close sidebar on mobile
+            if(window.innerWidth < 1024) {
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+                document.getElementById('overlay').classList.add('hidden');
+            }
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            document.getElementById('overlay').classList.toggle('hidden');
+        }
+
+        // Populate Member Cards
+        const memberCards = document.getElementById('memberCards');
+        const memberTable = document.getElementById('memberTableBody');
+        membersData.forEach(m => {
+            const progress = (m.meals / 55) * 100;
+            const balanceColor = m.balance < 0 ? 'text-red-400' : 'text-emerald-400';
+            const statusText = m.balance < 0 ? 'দেবে' : 'পাবে';
+            
+            memberCards.innerHTML += `
+                <div class="glass card-hover rounded-2xl p-5 flex flex-col items-center text-center">
+                    <div class="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-2xl font-bold text-white mb-3">
+                        ${m.name.charAt(0)}
+                    </div>
+                    <h3 class="text-lg font-bold text-white">${m.name}</h3>
+                    <div class="w-full bg-slate-700/50 rounded-full h-2 my-3">
+                        <div class="bg-gradient-to-r from-cyan-400 to-blue-500 h-2 rounded-full" style="width: ${progress}%"></div>
+                    </div>
+                    <div class="w-full grid grid-cols-2 gap-2 text-xs mb-3">
+                        <div class="bg-slate-800/40 p-2 rounded-lg"><p class="text-slate-400">মিল</p><p class="font-bold text-cyan-400">${bnNum(m.meals)}</p></div>
+                        <div class="bg-slate-800/40 p-2 rounded-lg"><p class="text-slate-400">জমা</p><p class="font-bold text-blue-400">৳${bnNum(m.deposit)}</p></div>
+                    </div>
+                    <div class="w-full mt-auto border-t border-slate-700 pt-3 flex justify-between items-center">
+                        <span class="text-slate-400 text-xs">${statusText}</span>
+                        <span class="font-bold ${balanceColor}">৳${bnNum(Math.abs(m.balance))}</span>
+                    </div>
+                </div>
+            `;
+            memberTable.innerHTML += `
+                <tr class="border-b border-slate-800 hover:bg-slate-800/30">
+                    <td class="p-3 text-left font-medium">${m.name}</td>
+                    <td class="p-3">${bnNum(m.meals)}</td>
+                    <td class="p-3 text-red-400">৳${bnNum(m.cost)}</td>
+                    <td class="p-3 text-blue-400">৳${bnNum(m.deposit)}</td>
+                    <td class="p-3 font-bold ${balanceColor}">৳${bnNum(Math.abs(m.balance))} ${statusText}</td>
+                </tr>`;
+        });
+
+        // Populate Expenses
+        const expList = document.getElementById('expensesList');
+        expensesData.forEach(e => {
+            expList.innerHTML += `
+                <div class="bg-slate-800/40 rounded-xl p-4 border border-slate-700 flex justify-between items-center">
+                    <div>
+                        <p class="text-white font-medium">${e.desc}</p>
+                        <p class="text-slate-400 text-xs">কেনা হয়েছে: ${e.who}</p>
+                    </div>
+                    <p class="text-amber-400 font-bold">৳ ${bnNum(e.amount)}</p>
+                </div>
+            `;
+        });
+
+        // Populate Meal Table
+        const mealTableHead = document.getElementById('mealTableHead');
+        let headerHtml = `<tr><th class="p-3 text-left">নাম</th>`;
+        for(let i=1; i<=31; i++) headerHtml += `<th class="p-1 text-xs">${bnNum(i)}</th>`;
+        headerHtml += `<th class="p-2 bg-slate-800/50">মোট</th></tr>`;
+        mealTableHead.innerHTML = headerHtml;
+
+        const dailyBody = document.getElementById('dailyMealTableBody');
+        membersData.forEach(m => {
+            let rowHtml = `<tr class="border-b border-slate-800 hover:bg-slate-800/30"><td class="p-3 text-left font-medium">${m.name}</td>`;
+            m.daily.forEach(meal => {
+                rowHtml += `<td class="p-1 ${meal===0 ? 'text-slate-700' : 'text-slate-300'}">${bnNum(meal)}</td>`;
+            });
+            rowHtml += `<td class="p-2 font-bold text-cyan-400 bg-slate-800/50">${bnNum(m.meals)}</td></tr>`;
+            dailyBody.innerHTML += rowHtml;
+        });
+
+        // Charts
+        new Chart(document.getElementById('mealCostChart'), {
+            type: 'bar',
+            data: {
+                labels: membersData.map(m => m.name),
+                datasets: [
+                    { label: 'মিল সংখ্যা', data: membersData.map(m => m.meals), backgroundColor: 'rgba(6, 182, 212, 0.6)', yAxisID: 'y' },
+                    { label: 'খরচ (৳)', data: membersData.map(m => m.cost), backgroundColor: 'rgba(239, 68, 68, 0.6)', yAxisID: 'y1' }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { type: 'linear', position: 'left', grid: { color: '#1e293b' } }, y1: { type: 'linear', position: 'right', grid: { drawOnChartArea: false } }, x: { grid: { color: '#1e293b' } } } }
+        });
+
+        new Chart(document.getElementById('expensePieChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['বড় বাজার', 'চাল ও ডাল', 'সবজি ও মরিচ', 'ডিম', 'অন্যান্য'],
+                datasets: [{ data: [14890, 120, 210, 270, 260], backgroundColor: ['#3b82f6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'], borderColor: '#050816', borderWidth: 2 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
+
+        new Chart(document.getElementById('balanceDoughnutChart'), {
+            type: 'doughnut',
+            data: {
+                labels: membersData.map(m => m.name),
+                datasets: [{ data: membersData.map(m => Math.abs(m.balance)), backgroundColor: membersData.map(m => m.balance < 0 ? '#ef4444' : '#10b981'), borderColor: '#050816', borderWidth: 2 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+        });
+    </script>
+</body>
+</html>
