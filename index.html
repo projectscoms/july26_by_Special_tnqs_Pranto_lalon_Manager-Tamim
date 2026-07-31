@@ -362,14 +362,13 @@
             initVisualMode();
         }
 
+        // BUG FIXED: Exchange Button Now Goes to Mode Selection Screen
         function toggleMode() {
-            if (currentMode === 'individual') startVisualMode();
-            else if (currentMode === 'visual') {
-                showScreen('individualScreen');
-                document.getElementById('individualData').classList.remove('hidden');
-                document.getElementById('indAnimation').classList.add('hidden');
-                currentMode = 'individual';
-            }
+            currentMode = null;
+            // Hide visual view explicitly if it was active
+            document.getElementById('visualView').classList.remove('active');
+            // Go back to the Mode Selection Screen
+            showScreen('modeScreen');
         }
 
         // --- Structural Individual Animation (10s) ---
@@ -531,7 +530,6 @@
             const cards = document.querySelectorAll('.member-card');
             const rows = document.querySelectorAll('.member-row');
             
-            // If user starts searching, auto switch to members section
             if (term.length > 0) {
                 const memberLink = document.querySelector('.sidebar-link:nth-child(2)');
                 if (!document.getElementById('members').classList.contains('active')) {
